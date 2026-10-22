@@ -95,11 +95,11 @@ As informações utilizadas foram revisadas antes de serem incorporadas ao proje
 
 > “Quais são os requisitos necessários para o primeiro checkpoint de uma aplicação cliente-servidor utilizando sockets?”
 
-> “Pesquise e explique de forma simples como funciona um handshake entre cliente e servidor.”
+> “Pesquise e explique como funciona um handshake entre cliente e servidor.”
 
-> “Ajude a organizar um README com instruções de execução para uma aplicação cliente-servidor em Python.”
+> "organize um README para este projeto.”
 
-> “Ajude a estruturar o relatório do primeiro checkpoint de forma simples e objetiva.”
+> “Ajude a estruturar o relatório checkpoint inicial.”
 
 ---
 
