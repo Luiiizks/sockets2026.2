@@ -2,28 +2,23 @@
 
 Trabalho prático da disciplina de **Infraestrutura de Redes e Comunicação**.
 
-Após o primeiro e o segundo checkpoint, a aplicação realiza a comunicação entre cliente e servidor utilizando sockets TCP em Python, com handshake inicial e troca de mensagens em pacotes, considerando um canal sem erros ou perdas.
+Após os três checkpoints, a aplicação realiza a comunicação entre cliente e servidor utilizando sockets TCP em Python, com handshake inicial, envio de mensagens em pacotes e mecanismos de controle de erros, perdas e retransmissões.
 
 ## Funcionalidades
 
-Até o momento, foram implementados:
-
-- conexão entre cliente e servidor via socket;
-- handshake inicial;
-- escolha do modo `gbn` ou `rs`;
+- Conexão entre cliente e servidor via sockets TCP;
+- escolha do modo `gbn` (Go-Back-N) ou `rs` (Repetição Seletiva);
 - escolha entre envio `individual` ou `lote`;
-- definição do tamanho máximo da mensagem;
-- tamanho padrão de 30 caracteres;
-- janela inicial definida pelo servidor com valor 5;
-- divisão da mensagem em pacotes de até 4 caracteres;
-- número de sequência em cada pacote;
-- quantidade total de pacotes;
-- checksum para verificação de integridade;
-- envio dos pacotes em formato JSON;
-- confirmação de recebimento com `ACK`;
-- confirmação individual no modo `rs`;
-- confirmação por lote no modo `gbn`;
-- reconstrução da mensagem completa no servidor.
+- tamanho máximo da mensagem configurável, com padrão de 30 caracteres;
+- janela inicial de 5 pacotes definida pelo servidor;
+- divisão das mensagens em pacotes de até 4 caracteres;
+- envio de pacotes em formato JSON;
+- confirmação de recebimento com `ACK` e sinalização de erro com `ERRO`;
+- reconstrução da mensagem original no servidor;
+- simulação de erros e perdas de pacotes;
+- temporizador e retransmissão nos modos GBN e RS;
+- verificação de integridade com checksum;
+- criptografia simétrica simples utilizando XOR.
 
 ## Tecnologias
 
@@ -37,6 +32,9 @@ Até o momento, foram implementados:
 client.py
 server.py
 README.md
+relatorio-checkpoint1.md
+relatorio-checkpoint2.md
+relatorio-checkpoint3.md
 ```
 
 ## Como executar
@@ -55,18 +53,17 @@ python3 client.py
 
 No cliente, escolha:
 
-1. modo de operação (`gbn` ou `rs`);
+1. Modo de operação (`gbn` ou `rs`);
 2. tipo de envio (`individual` ou `lote`);
 3. tamanho máximo da mensagem;
-4. mensagem que deseja enviar.
+4. mensagem que deseja enviar;
+5. se deseja simular erros ou perdas.
 
 Caso nenhum tamanho seja informado, será utilizado o valor padrão de `30`.
 
-Para encerrar a comunicação, digite:
+Para simular falhas, informe o número do pacote desejado, começando em `0`. Utilize `-1` caso não queira simular determinado tipo de falha.
 
-```text
-sair
-```
+Para encerrar a comunicação, digite `sair`.
 
 ## Handshake
 
@@ -88,61 +85,64 @@ O servidor responde:
 Handshake OK | modo=gbn | envio=lote | tamanho_max=30 | janela=5
 ```
 
-## Pacotes
+## Protocolo de comunicação
 
-Após o handshake, a mensagem é dividida em pacotes com carga útil de até 4 caracteres.
+As mensagens são divididas em pacotes com carga útil original de até 4 caracteres.
 
-Exemplo:
+Cada pacote possui metadados como número de sequência, total de pacotes, conteúdo, checksum e informações de controle.
 
-```text
-Mensagem: teste final
-
-Pacote 0: test
-Pacote 1: e fi
-Pacote 2: nal
-```
-
-Cada pacote possui informações como:
-
-- número de sequência;
-- quantidade total de pacotes;
-- conteúdo;
-- checksum;
-- indicação de fim de lote;
-- indicação de fim da mensagem.
-
-Os pacotes são enviados em formato JSON.
-
-Exemplo:
+Exemplo de pacote:
 
 ```json
 {
   "tipo": "DADOS",
   "sequencia": 0,
   "total": 3,
-  "conteudo": "test",
+  "conteudo": "hexadecimal",
   "checksum": 192,
   "fim_lote": false,
   "fim_mensagem": false
 }
 ```
 
-## Modos de confirmação
+O campo `conteudo` transporta os dados criptografados em hexadecimal.
 
-- `gbn`: no envio em lote, o servidor envia uma confirmação ao final do lote;
-- `rs`: o servidor envia uma confirmação individual para cada pacote recebido.
+O servidor responde utilizando `ACK` para confirmações ou `ERRO` quando identifica uma falha.
 
-No envio `individual`, a janela utilizada é igual a 1.
+## Modos de transmissão
 
-## Próxima etapa
+**Go-Back-N (GBN):** trabalha com confirmações acumuladas e, quando necessário, retransmite a partir do pacote com problema.
 
-Na próxima entrega serão adicionados:
+**Repetição Seletiva (RS):** confirma os pacotes individualmente e retransmite apenas os que continuam pendentes.
 
-- simulação de erros;
-- simulação de perdas;
-- temporizador;
-- retransmissão de pacotes;
-- comportamento completo dos modos `gbn` e `rs`.
+No envio em lote, o cliente utiliza a janela informada pelo servidor. No envio individual, utiliza uma janela de tamanho 1.
+
+## Simulação de erros e perdas
+
+A aplicação permite simular falhas de forma determinística:
+
+- **Erro:** o conteúdo criptografado do pacote escolhido é alterado na primeira transmissão, provocando uma falha de integridade.
+- **Perda:** o pacote escolhido não é enviado na primeira tentativa.
+
+O cliente utiliza um temporizador de `2,5 segundos` para aguardar as confirmações e realizar retransmissões quando necessário.
+
+## Checksum e criptografia
+
+O checksum é calculado manualmente por meio da soma dos bytes do conteúdo, utilizando módulo 256.
+
+A criptografia utiliza uma operação XOR com uma chave compartilhada entre cliente e servidor. A implementação tem finalidade educacional.
+
+## Testes
+
+Foram realizados testes com:
+
+- GBN e RS;
+- envio individual e em lote;
+- mensagens sem falhas;
+- erro de integridade;
+- perda de pacotes;
+- erro e perda combinados;
+- retransmissão e reconstrução da mensagem original.
 
 ## Equipe
 
